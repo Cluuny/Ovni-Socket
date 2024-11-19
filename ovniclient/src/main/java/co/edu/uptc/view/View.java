@@ -2,7 +2,6 @@ package co.edu.uptc.view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
 public class View extends JFrame {
     private final JTextArea messageArea = new JTextArea(20, 40);

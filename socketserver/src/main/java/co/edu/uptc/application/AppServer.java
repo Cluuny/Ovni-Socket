@@ -13,7 +13,7 @@ public class AppServer implements Runnable {
 
     public AppServer() throws IOException {
         this.serverSocket = new ServerSocket(7000);
-        this.simulationEngine = new SimulationEngine(400, 300, 50); // Centro y radio del destino.
+        this.simulationEngine = new SimulationEngine(800, 600, 400, 300, 50);
         System.out.println("Servidor abierto en el puerto: 7000");
         simulationEngine.startSimulation(10, 500, 5); // Ejemplo de parámetros iniciales.
     }

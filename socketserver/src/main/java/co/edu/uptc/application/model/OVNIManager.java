@@ -2,14 +2,18 @@ package co.edu.uptc.application.model;
 
 import com.google.gson.JsonArray;
 
+import lombok.Getter;
+
 import java.awt.Point;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Getter
 public class OVNIManager {
     private final CopyOnWriteArrayList<OVNI> ovnis;
     private final int destinationX;
     private final int destinationY;
     private final int destinationRadius;
+    private int crashedCount = 0;
 
     public OVNIManager(CopyOnWriteArrayList<OVNI> ovnis, int destinationX, int destinationY, int destinationRadius) {
         this.ovnis = ovnis;
@@ -19,11 +23,18 @@ public class OVNIManager {
     }
 
     public synchronized void updatePositions(int areaWidth, int areaHeight) {
-        for (OVNI ovni : ovnis) {
+        System.out.println("---- Comenzando actualización de posiciones ----");
+
+        ovnis.forEach(ovni -> {
+            System.out.println("Antes de mover: " + ovni.toJson());
+        });
+
+        ovnis.removeIf(ovni -> {
             if (!ovni.isCrashed()) {
                 if (isInDestinationArea(ovni)) {
-                    ovni.setCrashed(true);
-                    continue;
+                    crashedCount++;
+                    System.out.println("OVNI alcanzó la zona de destino y fue eliminado: " + ovni.toJson());
+                    return true; // Eliminar OVNI al alcanzar la zona de destino
                 }
 
                 if (ovni.hasCustomPath()) {
@@ -32,24 +43,41 @@ public class OVNIManager {
 
                     if (ovni.getX() == nextPoint.x && ovni.getY() == nextPoint.y) {
                         ovni.getCustomPath().remove(0);
+                        System.out.println("OVNI avanzó en su ruta personalizada: " + ovni.toJson());
                     }
                 } else if (ovni.hasDestination()) {
                     moveOvniTowards(ovni, ovni.getDestinationX(), ovni.getDestinationY());
+                    System.out.println("OVNI moviéndose hacia destino: " + ovni.toJson());
                 } else {
                     int newX = ovni.getX() + (int) (ovni.getSpeed() * Math.cos(Math.toRadians(ovni.getAngle())));
                     int newY = ovni.getY() + (int) (ovni.getSpeed() * Math.sin(Math.toRadians(ovni.getAngle())));
 
                     if (newX < 0 || newX >= areaWidth || newY < 0 || newY >= areaHeight) {
-                        ovni.setCrashed(true);
+                        crashedCount++;
+                        System.out.println("OVNI salió del área y fue eliminado: " + ovni.toJson());
+                        return true; // Eliminar OVNI al salir del área
                     } else {
                         ovni.setX(newX);
                         ovni.setY(newY);
+                        System.out.println("OVNI movido a nueva posición: " + ovni.toJson());
                     }
                 }
             }
-        }
+            return false; // No eliminar OVNI
+        });
 
+        // Verificar colisiones
         checkCollisions();
+
+        System.out.println("Después de mover:");
+        ovnis.forEach(ovni -> {
+            System.out.println(ovni.toJson());
+        });
+
+        System.out.println("Estado actual:");
+        System.out.println("OVNIs en movimiento: " + getMovingCount());
+        System.out.println("OVNIs estrellados: " + getCrashedCount());
+        System.out.println("---- Fin de actualización de posiciones ----");
     }
 
     private void moveOvniTowards(OVNI ovni, int targetX, int targetY) {
@@ -100,6 +128,25 @@ public class OVNIManager {
         return ovnisJson;
     }
 
+    public void selectOvni(int ovniIndex, String clientName) {
+        if (ovniIndex >= 0 && ovniIndex < ovnis.size()) {
+            OVNI selectedOvni = ovnis.get(ovniIndex);
+    
+            if (clientName == null) {
+                // Deseleccionar el OVNI
+                selectedOvni.setClientName(null);
+            } else {
+                // Asegurarse de que ningún otro OVNI esté seleccionado por este cliente
+                for (OVNI ovni : ovnis) {
+                    if (clientName.equals(ovni.getClientName())) {
+                        ovni.setClientName(null); // Deseleccionar cualquier OVNI previamente seleccionado
+                    }
+                }
+                selectedOvni.setClientName(clientName);
+            }
+        }
+    }
+    
     public int getMovingCount() {
         int count = 0;
         for (OVNI ovni : ovnis) {
@@ -109,7 +156,7 @@ public class OVNIManager {
         }
         return count;
     }
-    
+
     public int getCrashedCount() {
         int count = 0;
         for (OVNI ovni : ovnis) {

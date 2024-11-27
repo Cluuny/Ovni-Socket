@@ -21,6 +21,7 @@ public class OVNI {
     private int destinationX;
     private int destinationY;
     private List<Point> customPath;
+    private String clientName;
 
     public OVNI(int x, int y, int speed) {
         this.x = x;
@@ -78,6 +79,7 @@ public class OVNI {
         json.addProperty("speed", this.speed);
         json.addProperty("crashed", this.crashed);
         json.addProperty("angle", this.angle);
+        json.addProperty("clientName", this.clientName); // Agregar el nombre del cliente al JSON
         return json;
     }
 }

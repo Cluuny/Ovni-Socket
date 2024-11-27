@@ -15,7 +15,7 @@ public class AppServer implements Runnable {
         this.serverSocket = new ServerSocket(7000);
         this.simulationEngine = new SimulationEngine(800, 600, 400, 300, 50);
         System.out.println("Servidor abierto en el puerto: 7000");
-        simulationEngine.startSimulation(10, 500, 5); // Ejemplo de parámetros iniciales.
+        simulationEngine.startSimulation(10, 500, 5);
     }
 
     @Override

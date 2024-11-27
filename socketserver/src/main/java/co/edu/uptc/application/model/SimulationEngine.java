@@ -2,8 +2,11 @@ package co.edu.uptc.application.model;
 
 import com.google.gson.JsonObject;
 
+import lombok.Getter;
+
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Getter
 public class SimulationEngine {
     private final CopyOnWriteArrayList<OVNI> ovnis;
     private final OVNIManager ovniManager;
@@ -25,21 +28,22 @@ public class SimulationEngine {
             OVNI ovni = new OVNI(x, y, speed);
             ovnis.add(ovni);
         }
-
+    
         simulationThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
-                ovniManager.updatePositions(areaWidth, areaHeight);
-
                 try {
+                    ovniManager.updatePositions(areaWidth, areaHeight);
                     Thread.sleep(interval);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });
         simulationThread.start();
     }
-
+    
     public void stopSimulation() {
         if (simulationThread != null) {
             simulationThread.interrupt();
@@ -55,4 +59,3 @@ public class SimulationEngine {
         return status;
     }
 }
-

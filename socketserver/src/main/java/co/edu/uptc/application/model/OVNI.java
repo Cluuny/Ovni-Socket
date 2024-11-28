@@ -1,7 +1,6 @@
 package co.edu.uptc.application.model;
 
 import com.google.gson.JsonObject;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -66,8 +65,14 @@ public class OVNI {
         return crashed;
     }
 
+    // Modificación: Incrementar contador de OVNIs estrellados cuando se marca como
+    // 'crashed'
     public void setCrashed(boolean crashed) {
         this.crashed = crashed;
+        if (crashed) {
+            // Se debe incrementar el contador de OVNIs estrellados
+            OVNIManager.incrementCrashedCount(); // Asegúrate de tener acceso al contador de la clase OVNIManager
+        }
         this.clearDestination();
         this.customPath.clear();
     }

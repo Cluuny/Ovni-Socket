@@ -5,20 +5,15 @@ import javax.swing.*;
 import com.google.gson.JsonObject;
 
 import co.edu.uptc.model.ConnectionHandler;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Getter
-@Setter
 public class OVNIPanel extends JPanel {
     private List<OVNI> ovnis = new ArrayList<>();
     private OVNI selectedOVNI;
@@ -28,7 +23,8 @@ public class OVNIPanel extends JPanel {
     private int colorIndex = 0;
 
     public void setOvnis(List<OVNI> ovnis) {
-        this.ovnis = ovnis;
+        this.ovnis = new ArrayList<>(ovnis);
+        removeCrashedOvnis(); // Eliminar OVNIs estrellados de la lista
         repaint();
     }
 
@@ -54,12 +50,12 @@ public class OVNIPanel extends JPanel {
         }
     }
 
+    // Constructor con uso de SwingUtilities.invokeLater()
     public OVNIPanel(ConnectionHandler connectionHandler) {
         this.connectionHandler = connectionHandler;
-        // Agrega el MouseListener
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
                 selectOVNI(e.getX(), e.getY());
             }
         });
@@ -107,6 +103,11 @@ public class OVNIPanel extends JPanel {
             colorIndex = (colorIndex + 1) % availableColors.length; // Cicla entre los colores disponibles
         }
         return clientColors.get(clientName);
+    }
+
+    // Método para eliminar los OVNIs estrellados
+    private void removeCrashedOvnis() {
+        ovnis.removeIf(ovni -> ovni.isCrashed());
     }
 
     private void displayOVNIDetails(OVNI ovni) {

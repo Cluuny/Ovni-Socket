@@ -1,10 +1,13 @@
 package co.edu.uptc.application.model;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import lombok.Getter;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Getter
@@ -23,39 +26,37 @@ public class OVNIManager {
     }
 
     public synchronized void updatePositions(int areaWidth, int areaHeight) {
-        System.out.println("---- Comenzando actualización de posiciones ----");
-
-        ovnis.forEach(ovni -> {
-            System.out.println("Antes de mover: " + ovni.toJson());
-        });
-
         ovnis.removeIf(ovni -> {
             if (!ovni.isCrashed()) {
+                // Verificamos si el OVNI está en la zona de destino
                 if (isInDestinationArea(ovni)) {
-                    crashedCount++; // Actualización del contador en caso de alcanzar la zona de destino
-                    System.out.println("OVNI alcanzó la zona de destino y fue eliminado: " + ovni.toJson());
-                    return true; // Eliminar OVNI al alcanzar la zona de destino
+                    crashedCount++;
+                    return true; // El OVNI ha llegado al destino y debe ser eliminado
                 }
 
                 if (ovni.hasCustomPath()) {
-                    Point nextPoint = ovni.getCustomPath().get(0);
-                    moveOvniTowards(ovni, nextPoint.x, nextPoint.y);
+                    // Si tiene una trayectoria personalizada, moverlo de acuerdo a esa trayectoria
+                    Point nextPoint = ovni.getCustomPath().get(0); // Tomar el primer punto de la trayectoria
+                    moveOvniTowards(ovni, nextPoint.x, nextPoint.y); // Mover hacia el siguiente punto de la trayectoria
 
                     if (ovni.getX() == nextPoint.x && ovni.getY() == nextPoint.y) {
-                        ovni.getCustomPath().remove(0);
+                        ovni.getCustomPath().remove(0); // Eliminar el punto de la trayectoria una vez alcanzado
                         System.out.println("OVNI avanzó en su ruta personalizada: " + ovni.toJson());
                     }
                 } else if (ovni.hasDestination()) {
+                    // Si tiene un destino fijo, moverlo hacia allí
                     moveOvniTowards(ovni, ovni.getDestinationX(), ovni.getDestinationY());
                     System.out.println("OVNI moviéndose hacia destino: " + ovni.toJson());
                 } else {
+                    // Si no tiene destino ni trayectoria personalizada, se mueve de acuerdo a su
+                    // ángulo
                     int newX = ovni.getX() + (int) (ovni.getSpeed() * Math.cos(Math.toRadians(ovni.getAngle())));
                     int newY = ovni.getY() + (int) (ovni.getSpeed() * Math.sin(Math.toRadians(ovni.getAngle())));
 
+                    // Verificar si el nuevo punto está fuera de los límites del área
                     if (newX < 0 || newX >= areaWidth || newY < 0 || newY >= areaHeight) {
-                        crashedCount++; // Actualización del contador en caso de salida del área
-                        System.out.println("OVNI salió del área y fue eliminado: " + ovni.toJson());
-                        return true; // Eliminar OVNI al salir del área
+                        crashedCount++;
+                        return true; // El OVNI se ha salido del área y debe ser eliminado
                     } else {
                         ovni.setX(newX);
                         ovni.setY(newY);
@@ -63,10 +64,10 @@ public class OVNIManager {
                     }
                 }
             }
-            return false; // No eliminar OVNI
+            return false; // No eliminar el OVNI
         });
 
-        // Verificar colisiones
+        // Verificar colisiones entre OVNIs
         checkCollisions();
 
         System.out.println("Después de mover:");
@@ -130,21 +131,51 @@ public class OVNIManager {
         return ovnisJson;
     }
 
-    public void selectOvni(int ovniIndex, String clientName) {
-        if (ovniIndex >= 0 && ovniIndex < ovnis.size()) {
-            OVNI selectedOvni = ovnis.get(ovniIndex);
-
-            if (clientName == null) {
-                // Deseleccionar el OVNI
-                selectedOvni.setClientName(null);
-            } else {
-                // Asegurarse de que ningún otro OVNI esté seleccionado por este cliente
-                for (OVNI ovni : ovnis) {
-                    if (clientName.equals(ovni.getClientName())) {
-                        ovni.setClientName(null); // Deseleccionar cualquier OVNI previamente seleccionado
-                    }
+    public void selectOvni(int ovniId, String clientName) {
+        for (OVNI ovni : ovnis) {
+            if (ovni.getId() == ovniId) { // Usamos el ID único para seleccionar
+                if (clientName == null) {
+                    ovni.setClientName(null); // Deseleccionar
+                } else {
+                    ovni.setClientName(clientName); // Seleccionar
                 }
-                selectedOvni.setClientName(clientName);
+                break;
+            }
+        }
+    }
+
+    public void setCustomPath(int ovniIndex, List<Point> customPath) {
+        if (ovniIndex >= 0 && ovniIndex < ovnis.size()) {
+            OVNI selectedOvni = ovnis.stream()
+                    .filter(ovni -> ovni.getId() == ovniIndex) // Buscar por ID en lugar de índice
+                    .findFirst()
+                    .orElse(null);
+
+            if (selectedOvni != null) {
+                selectedOvni.setCustomPath(customPath); // Establecer la nueva trayectoria personalizada
+                System.out.println("Trayectoria personalizada establecida para OVNI: " + selectedOvni.toJson());
+            }
+        }
+    }
+
+    public void selectOvniById(int ovniId, String clientName) {
+        for (OVNI ovni : ovnis) {
+            if (ovni.getId() == ovniId) {
+                if (clientName == null) {
+                    ovni.setClientName(null); // Deseleccionar
+                } else {
+                    ovni.setClientName(clientName); // Seleccionar
+                }
+                break;
+            }
+        }
+    }
+
+    public void setCustomPathById(int ovniId, List<Point> customPath) {
+        for (OVNI ovni : ovnis) {
+            if (ovni.getId() == ovniId) {
+                ovni.setCustomPath(customPath);
+                break;
             }
         }
     }

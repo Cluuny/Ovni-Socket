@@ -22,7 +22,6 @@ public class SimulationView extends JFrame {
     // Constructor
     public SimulationView(int width, int height, ConnectionHandler connectionHandler, SimulationListener listener) {
         this.listener = listener;
-        System.out.println("Constructor de SimulationView llamado con dimensiones: " + width + "x" + height);
 
         setTitle("Simulación OVNI");
         setSize(width, height);
@@ -45,7 +44,6 @@ public class SimulationView extends JFrame {
         add(statsPanel, BorderLayout.SOUTH);
 
         listener.onSimulationViewReady();
-        System.out.println("SimulationView inicializada correctamente.");
     }
 
     public void updateSimulation(JsonObject simulationData) {
@@ -56,16 +54,25 @@ public class SimulationView extends JFrame {
 
         for (int i = 0; i < ovnisJson.size(); i++) {
             JsonObject ovniJson = ovnisJson.get(i).getAsJsonObject();
+
+            // Crear el OVNI utilizando el constructor adecuado
             OVNI ovni = new OVNI(
                     ovniJson.get("x").getAsInt(),
                     ovniJson.get("y").getAsInt(),
-                    ovniJson.get("speed").getAsInt(),
-                    ovniJson.get("angle").getAsInt(),
-                    ovniJson.get("crashed").getAsBoolean());
-            // Si clientName está presente, asignarlo al OVNI
-            if (ovniJson.has("clientName")) {
+                    ovniJson.get("speed").getAsInt());
+
+            // Asignar los valores restantes manualmente
+            ovni.setAngle(ovniJson.get("angle").getAsInt());
+            ovni.setCrashed(ovniJson.get("crashed").getAsBoolean());
+            ovni.setId(ovniJson.get("id").getAsInt()); // Establecer el ID que viene del servidor
+
+            // Verificar si el "clientName" existe antes de asignarlo
+            if (ovniJson.has("clientName") && !ovniJson.get("clientName").isJsonNull()) {
                 ovni.setClientName(ovniJson.get("clientName").getAsString());
+            } else {
+                ovni.setClientName("");
             }
+
             ovnis.add(ovni);
         }
 
@@ -80,7 +87,6 @@ public class SimulationView extends JFrame {
         int liveCount = simulationData.get("movingCount").getAsInt();
         int crashedCount = simulationData.get("crashedCount").getAsInt();
 
-        // Contar los OVNIs vivos (no estrellados)
         for (OVNI ovni : ovnis) {
             if (ovni.isCrashed()) {
                 crashedCount++; // Incrementa el contador de OVNIs estrellados

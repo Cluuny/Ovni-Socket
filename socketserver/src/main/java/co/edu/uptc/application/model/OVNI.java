@@ -1,16 +1,21 @@
 package co.edu.uptc.application.model;
 
-import com.google.gson.JsonObject;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger; // Para generar IDs únicos
+
+import com.google.gson.JsonObject;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
 public class OVNI {
+    private static final AtomicInteger idGenerator = new AtomicInteger(0); // Generador de IDs único
+
+    private int id; // ID único
     private int x;
     private int y;
     private int speed;
@@ -23,6 +28,7 @@ public class OVNI {
     private String clientName;
 
     public OVNI(int x, int y, int speed) {
+        this.id = idGenerator.incrementAndGet(); // Asignar un ID único
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -35,8 +41,8 @@ public class OVNI {
         return !customPath.isEmpty();
     }
 
-    public List<Point> getCustomPath() {
-        return customPath;
+    public void setCustomPath(List<Point> customPath) {
+        this.customPath = customPath;
     }
 
     public boolean hasDestination() {
@@ -65,13 +71,10 @@ public class OVNI {
         return crashed;
     }
 
-    // Modificación: Incrementar contador de OVNIs estrellados cuando se marca como
-    // 'crashed'
     public void setCrashed(boolean crashed) {
         this.crashed = crashed;
         if (crashed) {
-            // Se debe incrementar el contador de OVNIs estrellados
-            OVNIManager.incrementCrashedCount(); // Asegúrate de tener acceso al contador de la clase OVNIManager
+            OVNIManager.incrementCrashedCount();
         }
         this.clearDestination();
         this.customPath.clear();
@@ -79,12 +82,13 @@ public class OVNI {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
+        json.addProperty("id", this.id); // Añadir el ID único al JSON
         json.addProperty("x", this.x);
         json.addProperty("y", this.y);
         json.addProperty("speed", this.speed);
         json.addProperty("crashed", this.crashed);
         json.addProperty("angle", this.angle);
-        json.addProperty("clientName", this.clientName); // Agregar el nombre del cliente al JSON
+        json.addProperty("clientName", this.clientName);
         return json;
     }
 }

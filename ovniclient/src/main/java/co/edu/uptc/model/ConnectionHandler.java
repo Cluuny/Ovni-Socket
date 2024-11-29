@@ -33,10 +33,10 @@ public class ConnectionHandler {
     }
 
     public String receiveMessage() throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
-        return bufferedReader.readLine(); // Lee hasta encontrar un delimitador \n
+        BufferedReader bufferedReader = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
+        return bufferedReader.readLine();
     }
-    
 
     public void disconnect() throws IOException {
         if (clientSocket != null) {
@@ -54,9 +54,9 @@ public class ConnectionHandler {
 
     public int[] parseSimulationDimensions(String jsonResponse) {
         JsonObject dimensionsJson = JsonParser.parseString(jsonResponse).getAsJsonObject();
-        return new int[]{
-            dimensionsJson.get("width").getAsInt(),
-            dimensionsJson.get("height").getAsInt()
+        return new int[] {
+                dimensionsJson.get("width").getAsInt(),
+                dimensionsJson.get("height").getAsInt()
         };
     }
 }

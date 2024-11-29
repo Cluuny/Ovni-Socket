@@ -6,13 +6,11 @@ import java.awt.*;
 public class ConnectionView extends JFrame {
     private final JTextField hostField;
     private final JTextField portField;
-    private final JTextField nameField; // Campo para el nombre
+    private final JTextField nameField;
     private final JButton connectButton;
-    private ConnectionListener listener;
 
     public ConnectionView(ConnectionListener listener) {
-        this.listener = listener;
-        
+
         setTitle("Conexión Simulación OVNI");
         setSize(350, 250);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -72,16 +70,16 @@ public class ConnectionView extends JFrame {
                 String name = nameField.getText().trim(); // Captura el nombre
                 listener.onConnectRequest(host, port, name); // Llama al método incluyendo el nombre
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Puerto inválido", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Puerto inválido",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
         add(connectButton, gbc);
     }
 
     public interface ConnectionListener {
-        void onConnectRequest(String host, int port, String name); // Incluye el nombre en la firma del método
+        void onConnectRequest(String host, int port, String name);
     }
 }

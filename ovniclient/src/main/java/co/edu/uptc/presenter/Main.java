@@ -27,38 +27,39 @@ public class Main {
         try {
             model.connect(host, port);
             model.sendName(name);
-    
+
             // Mover cierre de ConnectionView aquí
             SwingUtilities.invokeLater(() -> {
                 if (simulationView == null) {
-                    connectionView.dispose(); // Cerrar ventana de conexión
-                    simulationView = new SimulationView(800, 600, model, this::startSimulationUpdates); // Crear SimulationView con dimensiones predeterminadas
-                    simulationView.setVisible(true); // Mostrar la nueva ventana
+                    connectionView.dispose();
+                    simulationView = new SimulationView(800, 600, model, this::startSimulationUpdates);
+                    simulationView.setVisible(true);
                 }
             });
-    
+
             new Thread(() -> {
-                boolean dimensionsReceived = false; // Para verificar si se recibieron dimensiones
+                boolean dimensionsReceived = false;
                 while (true) {
                     try {
                         String response = model.receiveMessage();
                         System.out.println("Respuesta recibida: " + response);
-    
+
                         if (response.startsWith("{") && response.endsWith("}")) {
                             JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
-    
+
                             if (jsonResponse.has("width") && jsonResponse.has("height") && !dimensionsReceived) {
                                 int width = jsonResponse.get("width").getAsInt();
                                 int height = jsonResponse.get("height").getAsInt();
                                 dimensionsReceived = true;
-    
+
                                 SwingUtilities.invokeLater(() -> {
                                     if (simulationView != null) {
                                         simulationView.setSize(width, height); // Actualizar dimensiones dinámicamente
-                                        System.out.println("Actualizando dimensiones de SimulationView: " + width + "x" + height);
+                                        System.out.println(
+                                                "Actualizando dimensiones de SimulationView: " + width + "x" + height);
                                     }
                                 });
-    
+
                             } else {
                                 SwingUtilities.invokeLater(() -> {
                                     if (simulationView != null) {
@@ -81,7 +82,7 @@ public class Main {
             handleConnectionError(e);
         }
     }
-    
+
     private void startSimulationUpdates() {
         new Thread(() -> {
             try {

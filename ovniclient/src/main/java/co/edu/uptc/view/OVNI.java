@@ -1,46 +1,91 @@
 package co.edu.uptc.view;
 
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger; // Para generar IDs únicos
+
+import com.google.gson.JsonObject;
+
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class OVNI {
+    private static final AtomicInteger idGenerator = new AtomicInteger(0); // Generador de IDs único
+
+    private int id; // ID único
     private int x;
     private int y;
     private int speed;
-    private int angle;
     private boolean crashed;
-    private String clientName; 
+    private int angle;
+    private boolean hasDestination;
+    private int destinationX;
+    private int destinationY;
+    private List<Point> customPath;
+    private String clientName;
 
-    // Constructor requerido
-    public OVNI(int x, int y, int speed, int angle, boolean crashed) {
+    public OVNI(int x, int y, int speed) {
+        this.id = idGenerator.incrementAndGet(); // Asignar un ID único
         this.x = x;
         this.y = y;
         this.speed = speed;
-        this.angle = angle;
-        this.crashed = crashed;
+        this.crashed = false;
+        this.angle = (int) (Math.random() * 360);
+        this.customPath = new ArrayList<>();
     }
 
-    // Getters y setters para cada atributo
-    public int getX() { return x; }
-    public void setX(int x) { this.x = x; }
+    public boolean hasCustomPath() {
+        return !customPath.isEmpty();
+    }
 
-    public int getY() { return y; }
-    public void setY(int y) { this.y = y; }
+    public void setCustomPath(List<Point> customPath) {
+        this.customPath = customPath;
+    }
 
-    public int getSpeed() { return speed; }
-    public void setSpeed(int speed) { this.speed = speed; }
+    public boolean hasDestination() {
+        return hasDestination;
+    }
 
-    public int getAngle() { return angle; }
-    public void setAngle(int angle) { this.angle = angle; }
+    public int getDestinationX() {
+        return destinationX;
+    }
 
-    public boolean isCrashed() { return crashed; }
-    public void setCrashed(boolean crashed) { this.crashed = crashed; }
+    public int getDestinationY() {
+        return destinationY;
+    }
 
-    // Método para representar al OVNI como JSON (opcional)
-    public String toJson() {
-        return String.format("{\"x\":%d,\"y\":%d,\"speed\":%d,\"angle\":%d,\"crashed\":%b}",
-                x, y, speed, angle, crashed);
+    public void setDestination(int x, int y) {
+        this.destinationX = x;
+        this.destinationY = y;
+        this.hasDestination = true;
+    }
+
+    public void clearDestination() {
+        this.hasDestination = false;
+    }
+
+    public boolean isCrashed() {
+        return crashed;
+    }
+
+    public void setCrashed(boolean crashed) {
+        this.crashed = crashed;
+        this.clearDestination();
+        this.customPath.clear();
+    }
+
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", this.id);
+        json.addProperty("x", this.x);
+        json.addProperty("y", this.y);
+        json.addProperty("speed", this.speed);
+        json.addProperty("crashed", this.crashed);
+        json.addProperty("angle", this.angle);
+        json.addProperty("clientName", this.clientName);
+        return json;
     }
 }

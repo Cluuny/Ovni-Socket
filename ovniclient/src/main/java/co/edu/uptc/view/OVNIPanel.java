@@ -1,41 +1,71 @@
 package co.edu.uptc.view;
 
 import javax.swing.*;
-
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
 import co.edu.uptc.model.ConnectionHandler;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
 public class OVNIPanel extends JPanel {
     private List<OVNI> ovnis = new ArrayList<>();
-    private OVNI selectedOVNI;
+    private List<Point> trajectory = new ArrayList<>(); // Trayectoria personalizada
+    private OVNI selectedOVNI; // OVNI seleccionado actualmente
     private ConnectionHandler connectionHandler;
     private final Map<String, Color> clientColors = new HashMap<>();
     private final Color[] availableColors = { Color.BLUE, Color.MAGENTA, Color.CYAN, Color.ORANGE, Color.PINK };
     private int colorIndex = 0;
+    private Point destination; // Para el destino del OVNI (si lo tienes)
 
-    public void setOvnis(List<OVNI> ovnis) {
-        this.ovnis = new ArrayList<>(ovnis);
-        removeCrashedOvnis(); // Eliminar OVNIs estrellados de la lista
-        repaint();
-    }
+    public OVNIPanel(ConnectionHandler connectionHandler) {
+        this.connectionHandler = connectionHandler;
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectOVNI(e.getX(), e.getY());
+                if (selectedOVNI != null) {
+                    // Iniciar la trayectoria personalizada
+                    trajectory.clear(); // Limpiar la trayectoria previa
+                    trajectory.add(e.getPoint());
+                }
+            }
 
-    public OVNI getSelectedOVNI() {
-        return selectedOVNI;
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (selectedOVNI != null && !trajectory.isEmpty()) {
+                    sendTrajectoryToServer();
+                }
+            }
+        });
+
+        addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (selectedOVNI != null) {
+                    // Agregar puntos a la trayectoria mientras se mueve el mouse
+                    trajectory.add(e.getPoint());
+                    repaint();
+                }
+            }
+        });
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
         for (OVNI ovni : ovnis) {
+            // Definir el color del OVNI dependiendo de si está estrellado
             if (!ovni.isCrashed()) {
                 g.setColor(Color.GREEN);
             } else {
@@ -43,31 +73,73 @@ public class OVNIPanel extends JPanel {
             }
             g.fillOval(ovni.getX(), ovni.getY(), 10, 10);
 
+            if (ovni == selectedOVNI) {
+                g.setColor(Color.YELLOW);
+                g.fillOval(ovni.getX() - 5, ovni.getY() - 5, 20, 20); // Aumentar tamaño del OVNI seleccionado
+            }
+
             if (ovni.getClientName() != null) {
                 g.setColor(getColorForClient(ovni.getClientName())); // Color único para cada cliente
-                g.drawString(ovni.getClientName(), ovni.getX() + 15, ovni.getY() - 5); // Dibuja el nombre
+                g.drawString(ovni.getClientName(), ovni.getX() + 15, ovni.getY() - 5);
+            }
+
+            if (ovni.hasCustomPath()) {
+                g.setColor(Color.CYAN); // Color para la trayectoria personalizada
+                List<Point> customPath = ovni.getCustomPath();
+                for (int i = 0; i < customPath.size() - 1; i++) {
+                    Point start = customPath.get(i);
+                    Point end = customPath.get(i + 1);
+                    g.drawLine(start.x, start.y, end.x, end.y); // Dibujar línea entre puntos de la trayectoria
+                }
+            }
+        }
+
+        if (destination != null) {
+            g.setColor(Color.BLACK);
+            g.fillOval(destination.x - 5, destination.y - 5, 10, 10); // Dibuja el destino como un círculo
+        }
+
+        if (!trajectory.isEmpty()) {
+            g.setColor(Color.BLUE); // Color para la trayectoria mientras se dibuja
+            for (int i = 0; i < trajectory.size() - 1; i++) {
+                Point start = trajectory.get(i);
+                Point end = trajectory.get(i + 1);
+                g.drawLine(start.x, start.y, end.x, end.y); // Dibujar línea entre los puntos
             }
         }
     }
 
-    // Constructor con uso de SwingUtilities.invokeLater()
-    public OVNIPanel(ConnectionHandler connectionHandler) {
-        this.connectionHandler = connectionHandler;
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                selectOVNI(e.getX(), e.getY());
+    private void sendTrajectoryToServer() {
+        if (selectedOVNI != null && !trajectory.isEmpty()) {
+            try {
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "setCustomPath");
+                request.addProperty("ovniId", selectedOVNI.getId()); // Usamos el ID
+
+                // Convertir la trayectoria a JSON
+                JsonArray trajectoryJson = new JsonArray();
+                for (Point point : trajectory) {
+                    JsonObject pointJson = new JsonObject();
+                    pointJson.addProperty("x", point.x);
+                    pointJson.addProperty("y", point.y);
+                    trajectoryJson.add(pointJson);
+                }
+
+                request.add("trajectory", trajectoryJson);
+                connectionHandler.sendMessage(request.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        });
+        }
     }
 
     private void selectOVNI(int mouseX, int mouseY) {
-        OVNI previouslySelected = selectedOVNI; // Guardar el OVNI previamente seleccionado
+        OVNI previouslySelected = selectedOVNI;
         selectedOVNI = null;
 
         for (OVNI ovni : ovnis) {
             if (Math.abs(ovni.getX() - mouseX) <= 10 && Math.abs(ovni.getY() - mouseY) <= 10) {
-                selectedOVNI = ovni;
+                selectedOVNI = ovni; // Seleccionamos el OVNI
                 break;
             }
         }
@@ -75,48 +147,41 @@ public class OVNIPanel extends JPanel {
         if (selectedOVNI != null) {
             try {
                 if (previouslySelected != null && !selectedOVNI.equals(previouslySelected)) {
-                    // Deseleccionar el OVNI anterior en el servidor
                     JsonObject deselectRequest = new JsonObject();
                     deselectRequest.addProperty("action", "selectOvni");
-                    deselectRequest.addProperty("ovniIndex", ovnis.indexOf(previouslySelected));
+                    deselectRequest.addProperty("ovniId", previouslySelected.getId()); // Usamos el ID
                     deselectRequest.addProperty("deselect", true);
                     connectionHandler.sendMessage(deselectRequest.toString());
                 }
 
-                // Seleccionar el nuevo OVNI en el servidor
                 JsonObject selectRequest = new JsonObject();
                 selectRequest.addProperty("action", "selectOvni");
-                selectRequest.addProperty("ovniIndex", ovnis.indexOf(selectedOVNI));
+                selectRequest.addProperty("ovniId", selectedOVNI.getId()); // Usamos el ID
                 selectRequest.addProperty("deselect", false);
                 connectionHandler.sendMessage(selectRequest.toString());
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
-        repaint();
+        repaint(); // Redibujar para mostrar el OVNI seleccionado
     }
 
     private Color getColorForClient(String clientName) {
         if (!clientColors.containsKey(clientName)) {
             clientColors.put(clientName, availableColors[colorIndex]);
-            colorIndex = (colorIndex + 1) % availableColors.length; // Cicla entre los colores disponibles
+            colorIndex = (colorIndex + 1) % availableColors.length;
         }
         return clientColors.get(clientName);
     }
 
-    // Método para eliminar los OVNIs estrellados
     private void removeCrashedOvnis() {
         ovnis.removeIf(ovni -> ovni.isCrashed());
     }
 
-    private void displayOVNIDetails(OVNI ovni) {
-        if (ovni != null) {
-            JOptionPane.showMessageDialog(this,
-                    "OVNI seleccionado:\n" +
-                            "Posición: (" + ovni.getX() + ", " + ovni.getY() + ")\n" +
-                            "Estado: " + (ovni.isCrashed() ? "Estrellado" : "En movimiento"),
-                    "Detalles del OVNI", JOptionPane.INFORMATION_MESSAGE);
-        }
+    public void setOvnis(List<OVNI> ovnis) {
+        this.ovnis = new ArrayList<>(ovnis);
+        removeCrashedOvnis(); // Eliminar OVNIs estrellados de la lista
+        repaint();
     }
 }

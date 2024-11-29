@@ -3,16 +3,18 @@ package co.edu.uptc.controllers;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import co.edu.uptc.application.model.OVNI;
 import co.edu.uptc.application.model.OVNIManager;
 import co.edu.uptc.application.model.SimulationEngine;
 
+import java.awt.Point;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectionHandler implements Runnable {
     private final Socket connectionSocket;
@@ -20,7 +22,7 @@ public class ConnectionHandler implements Runnable {
     private DataInputStream reader;
     private DataOutputStream writer;
     private boolean running;
-    private String clientName; // Campo para almacenar el nombre del cliente
+    private String clientName;
 
     public ConnectionHandler(Socket connectionSocket, SimulationEngine simulationEngine) {
         this.connectionSocket = connectionSocket;
@@ -47,12 +49,12 @@ public class ConnectionHandler implements Runnable {
                 JsonObject response = new JsonObject();
                 String action = request.get("action").getAsString();
                 JsonObject dimensions = new JsonObject();
+
                 switch (action) {
                     case "registerName":
                         clientName = request.get("name").getAsString();
                         System.out.println("Cliente registrado: " + clientName);
 
-                        // Crear un objeto JSON para la respuesta
                         JsonObject dimensionResponse = new JsonObject();
                         dimensionResponse.addProperty("width", 800);
                         dimensionResponse.addProperty("height", 600);
@@ -72,14 +74,31 @@ public class ConnectionHandler implements Runnable {
                         break;
 
                     case "selectOvni":
-                        int ovniIndex = request.get("ovniIndex").getAsInt();
-                        boolean deselect = request.get("deselect").getAsBoolean(); // Indica si el cliente está deseleccionando
-                        String clientName = this.clientName; // Nombre del cliente conectado
+                        int ovniIndex = request.get("ovniId").getAsInt(); // Usamos el id del OVNI
+                        boolean deselect = request.get("deselect").getAsBoolean();
                         if (deselect) {
-                            simulationEngine.getOvniManager().selectOvni(ovniIndex, null); // Deseleccionar OVNI
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, null); // Deseleccionar
                         } else {
-                            simulationEngine.getOvniManager().selectOvni(ovniIndex, clientName); // Seleccionar OVNI
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, clientName); // Seleccionar
                         }
+                        break;
+
+                    case "setCustomPath":
+                        // Recibir la trayectoria personalizada
+                        int selectedOvniId = request.get("ovniId").getAsInt(); // Usar el ID
+                        JsonArray trajectoryJson = request.get("trajectory").getAsJsonArray();
+                        List<Point> newPath = new ArrayList<>();
+
+                        // Convertir los puntos de la trayectoria
+                        for (int i = 0; i < trajectoryJson.size(); i++) {
+                            JsonObject pointJson = trajectoryJson.get(i).getAsJsonObject();
+                            int x = pointJson.get("x").getAsInt();
+                            int y = pointJson.get("y").getAsInt();
+                            newPath.add(new Point(x, y));
+                        }
+
+                        // Establecer la nueva trayectoria personalizada en el OVNI
+                        simulationEngine.getOvniManager().setCustomPathById(selectedOvniId, newPath);
                         break;
 
                     default:
@@ -98,28 +117,28 @@ public class ConnectionHandler implements Runnable {
             while (running) {
                 JsonObject status = new JsonObject();
                 OVNIManager ovniManager = simulationEngine.getOvniManager();
-    
+
                 status.addProperty("movingCount", ovniManager.getMovingCount());
                 status.addProperty("crashedCount", ovniManager.getCrashedCount());
-    
+
                 JsonArray ovnisArray = new JsonArray();
                 for (OVNI ovni : ovniManager.getOvnis()) {
                     ovnisArray.add(ovni.toJson());
                 }
                 status.add("ovnis", ovnisArray);
-    
+
                 synchronized (writer) {
                     String message = gson.toJson(status) + "\n"; // Añade \n como delimitador
                     writer.write(message.getBytes("UTF-8")); // Envía como bytes UTF-8
                     writer.flush(); // Asegura el envío
                 }
-                Thread.sleep(100); // Intervalo entre mensajes
+                Thread.sleep(50); // Intervalo entre mensajes
             }
         } catch (IOException | InterruptedException e) {
             closeConnection();
         }
     }
-    
+
     public void closeConnection() {
         this.running = false;
         try {

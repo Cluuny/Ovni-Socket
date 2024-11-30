@@ -1,17 +1,23 @@
 package co.edu.uptc.presenter;
 
 import co.edu.uptc.model.ConnectionHandler;
+import co.edu.uptc.model.OVNI;
 import co.edu.uptc.view.ConnectionView;
 import co.edu.uptc.view.SimulationView;
+import lombok.Getter;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.stream.JsonReader;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.io.StringReader;
 
+import java.awt.Point;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
 public class Main {
     private ConnectionHandler model;
     private ConnectionView connectionView;
@@ -32,7 +38,11 @@ public class Main {
             SwingUtilities.invokeLater(() -> {
                 if (simulationView == null) {
                     connectionView.dispose();
-                    simulationView = new SimulationView(800, 600, model, this::startSimulationUpdates);
+                    try {
+                        simulationView = new SimulationView(800, 600, model.clone(), this::startSimulationUpdates);
+                    } catch (CloneNotSupportedException e) {
+                        e.printStackTrace();
+                    }
                     simulationView.setVisible(true);
                 }
             });
@@ -42,7 +52,6 @@ public class Main {
                 while (true) {
                     try {
                         String response = model.receiveMessage();
-                        System.out.println("Respuesta recibida: " + response);
 
                         if (response.startsWith("{") && response.endsWith("}")) {
                             JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
@@ -54,16 +63,15 @@ public class Main {
 
                                 SwingUtilities.invokeLater(() -> {
                                     if (simulationView != null) {
-                                        simulationView.setSize(width, height); // Actualizar dimensiones dinámicamente
-                                        System.out.println(
-                                                "Actualizando dimensiones de SimulationView: " + width + "x" + height);
+                                        simulationView.setSize(width, height);
                                     }
                                 });
 
                             } else {
                                 SwingUtilities.invokeLater(() -> {
                                     if (simulationView != null) {
-                                        simulationView.updateSimulation(jsonResponse);
+                                        simulationView.updateSimulation(this.convertToOvnis(jsonResponse));
+                                        simulationView.updateStats(jsonResponse);
                                     }
                                 });
                             }
@@ -74,7 +82,7 @@ public class Main {
                         System.err.println("Error en la recepción de datos: " + e.getMessage());
                         break;
                     } catch (Exception e) {
-                        System.err.println("Error inesperado: " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             }).start();
@@ -87,12 +95,13 @@ public class Main {
         new Thread(() -> {
             try {
                 while (true) {
-                    String jsonData = model.receiveMessage();
+                    String jsonData = this.model.receiveMessage();
                     JsonObject simulationData = JsonParser.parseString(jsonData).getAsJsonObject();
 
                     SwingUtilities.invokeLater(() -> {
                         if (simulationView != null) {
-                            simulationView.updateSimulation(simulationData);
+                            simulationView.updateSimulation(this.convertToOvnis(simulationData));
+                            simulationView.updateStats(simulationData);
                         }
                     });
                 }
@@ -114,6 +123,75 @@ public class Main {
             if (connectionView != null)
                 connectionView.dispose();
         });
+    }
+
+    private List<OVNI> convertToOvnis(JsonObject simulationData) {
+        JsonArray ovnisJson = simulationData.getAsJsonArray("ovnis");
+        List<OVNI> ovnis = new ArrayList<>();
+
+        for (int i = 0; i < ovnisJson.size(); i++) {
+            JsonObject ovniJson = ovnisJson.get(i).getAsJsonObject();
+            OVNI ovni = new OVNI(
+                    ovniJson.get("x").getAsInt(),
+                    ovniJson.get("y").getAsInt(),
+                    ovniJson.get("speed").getAsInt());
+
+            // Asignar los valores restantes manualmente
+            ovni.setAngle(ovniJson.get("angle").getAsInt());
+            ovni.setCrashed(ovniJson.get("crashed").getAsBoolean());
+            ovni.setId(ovniJson.get("id").getAsInt()); // Establecer el ID que viene del servidor
+
+            // Verificar si el "clientName" existe antes de asignarlo
+            if (ovniJson.has("clientName") && !ovniJson.get("clientName").isJsonNull()) {
+                ovni.setClientName(ovniJson.get("clientName").getAsString());
+            } else {
+                ovni.setClientName("");
+            }
+
+            ovnis.add(ovni.clone());
+        }
+        return ovnis;
+    }
+
+    public boolean sendSelectRequest(OVNI ovni, String action, ConnectionHandler modelFromClient) throws IOException {
+        boolean wasSended = false;
+        System.out.println(modelFromClient.getReader().toString());
+        if (action.equals("deselect")) {
+            JsonObject deselectRequest = new JsonObject();
+            deselectRequest.addProperty("action", "selectOvni");
+            deselectRequest.addProperty("ovniId", ovni.getId());
+            deselectRequest.addProperty("deselect", true);
+            modelFromClient.sendMessage(deselectRequest.toString());
+            wasSended = true;
+        } else {
+            JsonObject selectRequest = new JsonObject();
+            selectRequest.addProperty("action", "selectOvni");
+            selectRequest.addProperty("ovniId", ovni.getId()); // Usamos el ID
+            selectRequest.addProperty("deselect", false);
+            modelFromClient.sendMessage(selectRequest.toString());
+            wasSended = true;
+        }
+        return wasSended;
+    }
+
+    public void sendTrajectoryToServer(OVNI selectedOVNI, List<Point> trajectory, ConnectionHandler modelFromClient)
+            throws IOException {
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "setCustomPath");
+        request.addProperty("ovniId", selectedOVNI.getId()); // Usamos el ID
+
+        // Convertir la trayectoria a JSON
+        JsonArray trajectoryJson = new JsonArray();
+        for (Point point : trajectory) {
+            JsonObject pointJson = new JsonObject();
+            pointJson.addProperty("x", point.x);
+            pointJson.addProperty("y", point.y);
+            trajectoryJson.add(pointJson);
+        }
+
+        request.add("trajectory", trajectoryJson);
+        System.out.println(request.toString());
+        modelFromClient.sendMessage(request.toString());
     }
 
     public static void main(String[] args) {

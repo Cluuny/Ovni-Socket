@@ -13,9 +13,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OVNI {
-    private static final AtomicInteger idGenerator = new AtomicInteger(0); // Generador de IDs único
+    private static final AtomicInteger idGenerator = new AtomicInteger(0);
 
-    private int id; // ID único
+    private int id;
     private int x;
     private int y;
     private int speed;
@@ -28,7 +28,7 @@ public class OVNI {
     private String clientName;
 
     public OVNI(int x, int y, int speed) {
-        this.id = idGenerator.incrementAndGet(); // Asignar un ID único
+        this.id = idGenerator.incrementAndGet();
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -82,7 +82,7 @@ public class OVNI {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.addProperty("id", this.id); // Añadir el ID único al JSON
+        json.addProperty("id", this.id);
         json.addProperty("x", this.x);
         json.addProperty("y", this.y);
         json.addProperty("speed", this.speed);

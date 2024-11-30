@@ -1,4 +1,4 @@
-package co.edu.uptc.view;
+package co.edu.uptc.model;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class OVNI {
+public class OVNI implements Cloneable {
     private static final AtomicInteger idGenerator = new AtomicInteger(0); // Generador de IDs único
 
     private int id; // ID único
@@ -87,5 +87,15 @@ public class OVNI {
         json.addProperty("angle", this.angle);
         json.addProperty("clientName", this.clientName);
         return json;
+    }
+
+    @Override
+    public OVNI clone() {
+        try {
+            return (OVNI) super.clone(); // Clona el objeto OVNI
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace(); // En caso de que la clonación no sea soportada
+            return null;
+        }
     }
 }

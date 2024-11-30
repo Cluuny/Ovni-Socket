@@ -1,8 +1,9 @@
 package co.edu.uptc.view;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
 import co.edu.uptc.model.ConnectionHandler;
+import co.edu.uptc.model.OVNI;
 
 import javax.swing.*;
 
@@ -14,24 +15,18 @@ import java.util.List;
 public class SimulationView extends JFrame {
     private OVNIPanel ovniPanel;
     private List<OVNI> ovnis = new ArrayList<>();
-    private SimulationListener listener;
+    private JLabel liveCountLabel;
+    private JLabel crashedCountLabel;
 
-    private JLabel liveCountLabel; // Para mostrar el número de OVNIs vivos
-    private JLabel crashedCountLabel; // Para mostrar el número de OVNIs estrellados
-
-    // Constructor
-    public SimulationView(int width, int height, ConnectionHandler connectionHandler, SimulationListener listener) {
-        this.listener = listener;
-
+    public SimulationView(int width, int height, ConnectionHandler model, SimulationListener listener) {
         setTitle("Simulación OVNI");
         setSize(width, height);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        ovniPanel = new OVNIPanel(connectionHandler);
+        ovniPanel = new OVNIPanel(model);
         add(ovniPanel, BorderLayout.CENTER);
 
-        // Crear panel para los contadores
         JPanel statsPanel = new JPanel();
         statsPanel.setLayout(new GridLayout(1, 2));
 
@@ -46,64 +41,24 @@ public class SimulationView extends JFrame {
         listener.onSimulationViewReady();
     }
 
-    public void updateSimulation(JsonObject simulationData) {
-        System.out.println("Actualizando simulación con datos: " + simulationData);
-
-        JsonArray ovnisJson = simulationData.getAsJsonArray("ovnis");
-        List<OVNI> ovnis = new ArrayList<>();
-
-        for (int i = 0; i < ovnisJson.size(); i++) {
-            JsonObject ovniJson = ovnisJson.get(i).getAsJsonObject();
-
-            // Crear el OVNI utilizando el constructor adecuado
-            OVNI ovni = new OVNI(
-                    ovniJson.get("x").getAsInt(),
-                    ovniJson.get("y").getAsInt(),
-                    ovniJson.get("speed").getAsInt());
-
-            // Asignar los valores restantes manualmente
-            ovni.setAngle(ovniJson.get("angle").getAsInt());
-            ovni.setCrashed(ovniJson.get("crashed").getAsBoolean());
-            ovni.setId(ovniJson.get("id").getAsInt()); // Establecer el ID que viene del servidor
-
-            // Verificar si el "clientName" existe antes de asignarlo
-            if (ovniJson.has("clientName") && !ovniJson.get("clientName").isJsonNull()) {
-                ovni.setClientName(ovniJson.get("clientName").getAsString());
-            } else {
-                ovni.setClientName("");
-            }
-
-            ovnis.add(ovni);
-        }
-
-        ovniPanel.setOvnis(ovnis); // Actualiza los OVNIs en el panel
-        updateStats(simulationData); // Actualiza los contadores de OVNIs vivos y estrellados
-        System.out.println("Se actualizó la lista de OVNIs: " + ovnis.size());
-        ovniPanel.repaint(); // Redibuja el panel
+    public void updateSimulation(List<OVNI> ovnis) {
+        ovniPanel.setOvnis(ovnis);
+        ovniPanel.repaint();
     }
 
-    private void updateStats(JsonObject simulationData) {
-        // Obtener los valores de los contadores directamente desde el servidor
+    public void updateStats(JsonObject simulationData) {
         int liveCount = simulationData.get("movingCount").getAsInt();
         int crashedCount = simulationData.get("crashedCount").getAsInt();
 
         for (OVNI ovni : ovnis) {
             if (ovni.isCrashed()) {
-                crashedCount++; // Incrementa el contador de OVNIs estrellados
+                crashedCount++;
             } else {
-                liveCount++; // Incrementa el contador de OVNIs vivos
+                liveCount++;
             }
         }
 
-        // Actualizar las etiquetas de la interfaz
-        System.out.println("OVNIs vivos: " + liveCount);
-        System.out.println("OVNIs estrellados: " + crashedCount);
-
         liveCountLabel.setText("OVNIs vivos: " + liveCount);
         crashedCountLabel.setText("OVNIs estrellados: " + crashedCount);
-    }
-
-    public interface SimulationListener {
-        void onSimulationViewReady();
     }
 }

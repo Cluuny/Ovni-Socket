@@ -22,7 +22,6 @@ public class SimulationEngine {
     }
 
     public void startSimulation(int numOvnis, int interval, int speed) {
-        // Crear los OVNIs con ID único y asignarlos a la simulación
         for (int i = 0; i < numOvnis; i++) {
             int x = (int) (Math.random() * areaWidth);
             int y = (int) (Math.random() * areaHeight);
@@ -30,11 +29,9 @@ public class SimulationEngine {
             ovnis.add(ovni);
         }
 
-        // Iniciar el hilo de simulación
         simulationThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    // Actualizar las posiciones de los OVNIs y sus trayectorias
                     ovniManager.updatePositions(areaWidth, areaHeight);
                     Thread.sleep(interval);
                 } catch (InterruptedException e) {

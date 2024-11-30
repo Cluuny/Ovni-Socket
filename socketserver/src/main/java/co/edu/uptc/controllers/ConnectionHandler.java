@@ -43,8 +43,7 @@ public class ConnectionHandler implements Runnable {
 
         try {
             while (this.connectionSocket.isConnected() && running) {
-                String input = this.reader.readUTF();
-                JsonObject request = gson.fromJson(input, JsonObject.class);
+                JsonObject request = this.readRequest(gson);
 
                 JsonObject response = new JsonObject();
                 String action = request.get("action").getAsString();
@@ -52,61 +51,61 @@ public class ConnectionHandler implements Runnable {
 
                 switch (action) {
                     case "registerName":
+                        ServerLogger.log(clientName + ": registra", "info");
                         clientName = request.get("name").getAsString();
-                        System.out.println("Cliente registrado: " + clientName);
-
                         JsonObject dimensionResponse = new JsonObject();
                         dimensionResponse.addProperty("width", 800);
                         dimensionResponse.addProperty("height", 600);
-                        writer.writeUTF(gson.toJson(dimensionResponse)); // Enviar dimensiones correctamente
+                        System.out.println(gson.toJson(dimensionResponse));
+                        writer.writeUTF(gson.toJson(dimensionResponse));
                         break;
 
                     case "getStatus":
+                        ServerLogger.log(clientName + ": actualiza", "info");
                         JsonObject statusResponse = new JsonObject();
                         statusResponse.add("status", gson.toJsonTree(simulationEngine.getStatus()));
-                        writer.writeUTF(gson.toJson(statusResponse)); // Envía un objeto JSON completo
+                        writer.writeUTF(gson.toJson(statusResponse));
                         break;
 
                     case "getDimensions":
+                        ServerLogger.log(clientName + ": enruta", "info");
                         dimensions.addProperty("width", 800);
                         dimensions.addProperty("height", 600);
+                        System.out.println(gson.toJson(dimensions));
                         this.writer.writeUTF(gson.toJson(dimensions));
                         break;
 
                     case "selectOvni":
-                        int ovniIndex = request.get("ovniId").getAsInt(); // Usamos el id del OVNI
+                        ServerLogger.log(clientName + ": selecciona", "info");
+                        int ovniIndex = request.get("ovniId").getAsInt();
                         boolean deselect = request.get("deselect").getAsBoolean();
                         if (deselect) {
-                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, null); // Deseleccionar
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, null);
                         } else {
-                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, clientName); // Seleccionar
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, clientName);
                         }
                         break;
-
                     case "setCustomPath":
-                        // Recibir la trayectoria personalizada
+                        ServerLogger.log(clientName + ": enruta", "info");
                         int selectedOvniId = request.get("ovniId").getAsInt(); // Usar el ID
                         JsonArray trajectoryJson = request.get("trajectory").getAsJsonArray();
                         List<Point> newPath = new ArrayList<>();
-
-                        // Convertir los puntos de la trayectoria
                         for (int i = 0; i < trajectoryJson.size(); i++) {
                             JsonObject pointJson = trajectoryJson.get(i).getAsJsonObject();
                             int x = pointJson.get("x").getAsInt();
                             int y = pointJson.get("y").getAsInt();
                             newPath.add(new Point(x, y));
                         }
-
-                        // Establecer la nueva trayectoria personalizada en el OVNI
                         simulationEngine.getOvniManager().setCustomPathById(selectedOvniId, newPath);
                         break;
 
                     default:
                         response.addProperty("error", "Invalid action");
+                        ServerLogger.log(response.toString(), "error");
                         this.writer.writeUTF(gson.toJson(response));
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             this.closeConnection();
         }
     }
@@ -128,15 +127,25 @@ public class ConnectionHandler implements Runnable {
                 status.add("ovnis", ovnisArray);
 
                 synchronized (writer) {
-                    String message = gson.toJson(status) + "\n"; // Añade \n como delimitador
-                    writer.write(message.getBytes("UTF-8")); // Envía como bytes UTF-8
-                    writer.flush(); // Asegura el envío
+                    String message = gson.toJson(status) + "\n";
+                    writer.write(message.getBytes("UTF-8"));
+                    writer.flush();
                 }
-                Thread.sleep(50); // Intervalo entre mensajes
+                Thread.sleep(50);
             }
         } catch (IOException | InterruptedException e) {
             closeConnection();
         }
+    }
+
+    public JsonObject readRequest(Gson gson) {
+        try {
+            String input = this.reader.readUTF();
+            return gson.fromJson(input, JsonObject.class);
+        } catch (IOException e) {
+            this.closeConnection();
+        }
+        return null;
     }
 
     public void closeConnection() {

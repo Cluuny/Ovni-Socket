@@ -1,12 +1,10 @@
 package co.edu.uptc.application.model;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 import lombok.Getter;
 
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -16,7 +14,7 @@ public class OVNIManager {
     private final int destinationX;
     private final int destinationY;
     private final int destinationRadius;
-    private static int crashedCount = 0; // Contador de OVNIs estrellados
+    private static int crashedCount = 0;
 
     public OVNIManager(CopyOnWriteArrayList<OVNI> ovnis, int destinationX, int destinationY, int destinationRadius) {
         this.ovnis = ovnis;
@@ -28,57 +26,36 @@ public class OVNIManager {
     public synchronized void updatePositions(int areaWidth, int areaHeight) {
         ovnis.removeIf(ovni -> {
             if (!ovni.isCrashed()) {
-                // Verificamos si el OVNI está en la zona de destino
                 if (isInDestinationArea(ovni)) {
                     crashedCount++;
-                    return true; // El OVNI ha llegado al destino y debe ser eliminado
+                    return true;
                 }
 
                 if (ovni.hasCustomPath()) {
-                    // Si tiene una trayectoria personalizada, moverlo de acuerdo a esa trayectoria
-                    Point nextPoint = ovni.getCustomPath().get(0); // Tomar el primer punto de la trayectoria
-                    moveOvniTowards(ovni, nextPoint.x, nextPoint.y); // Mover hacia el siguiente punto de la trayectoria
+                    Point nextPoint = ovni.getCustomPath().get(0);
+                    moveOvniTowards(ovni, nextPoint.x, nextPoint.y);
 
                     if (ovni.getX() == nextPoint.x && ovni.getY() == nextPoint.y) {
-                        ovni.getCustomPath().remove(0); // Eliminar el punto de la trayectoria una vez alcanzado
-                        System.out.println("OVNI avanzó en su ruta personalizada: " + ovni.toJson());
+                        ovni.getCustomPath().remove(0);
                     }
                 } else if (ovni.hasDestination()) {
-                    // Si tiene un destino fijo, moverlo hacia allí
                     moveOvniTowards(ovni, ovni.getDestinationX(), ovni.getDestinationY());
-                    System.out.println("OVNI moviéndose hacia destino: " + ovni.toJson());
                 } else {
-                    // Si no tiene destino ni trayectoria personalizada, se mueve de acuerdo a su
-                    // ángulo
                     int newX = ovni.getX() + (int) (ovni.getSpeed() * Math.cos(Math.toRadians(ovni.getAngle())));
                     int newY = ovni.getY() + (int) (ovni.getSpeed() * Math.sin(Math.toRadians(ovni.getAngle())));
 
-                    // Verificar si el nuevo punto está fuera de los límites del área
                     if (newX < 0 || newX >= areaWidth || newY < 0 || newY >= areaHeight) {
                         crashedCount++;
-                        return true; // El OVNI se ha salido del área y debe ser eliminado
+                        return true;
                     } else {
                         ovni.setX(newX);
                         ovni.setY(newY);
-                        System.out.println("OVNI movido a nueva posición: " + ovni.toJson());
                     }
                 }
             }
-            return false; // No eliminar el OVNI
+            return false;
         });
-
-        // Verificar colisiones entre OVNIs
         checkCollisions();
-
-        System.out.println("Después de mover:");
-        ovnis.forEach(ovni -> {
-            System.out.println(ovni.toJson());
-        });
-
-        System.out.println("Estado actual:");
-        System.out.println("OVNIs en movimiento: " + getMovingCount());
-        System.out.println("OVNIs estrellados: " + getCrashedCount());
-        System.out.println("---- Fin de actualización de posiciones ----");
     }
 
     private void moveOvniTowards(OVNI ovni, int targetX, int targetY) {
@@ -112,11 +89,9 @@ public class OVNIManager {
                     int deltaY = ovni1.getY() - ovni2.getY();
                     double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                    if (distance < 20) { // Distancia de colisión (ajustar si es necesario)
+                    if (distance < 20) {
                         ovni1.setCrashed(true);
                         ovni2.setCrashed(true);
-                        System.out.println(
-                                "Colisión detectada entre: " + ovni1.getClientName() + " y " + ovni2.getClientName());
                     }
                 }
             }
@@ -133,11 +108,10 @@ public class OVNIManager {
 
     public void selectOvni(int ovniId, String clientName) {
         for (OVNI ovni : ovnis) {
-            if (ovni.getId() == ovniId) { // Usamos el ID único para seleccionar
+            if (ovni.getId() == ovniId) {
                 if (clientName == null) {
-                    ovni.setClientName(null); // Deseleccionar
-                } else {
-                    ovni.setClientName(clientName); // Seleccionar
+                    ovni.setClientName(null);
+                    ovni.setClientName(clientName);
                 }
                 break;
             }
@@ -147,13 +121,12 @@ public class OVNIManager {
     public void setCustomPath(int ovniIndex, List<Point> customPath) {
         if (ovniIndex >= 0 && ovniIndex < ovnis.size()) {
             OVNI selectedOvni = ovnis.stream()
-                    .filter(ovni -> ovni.getId() == ovniIndex) // Buscar por ID en lugar de índice
+                    .filter(ovni -> ovni.getId() == ovniIndex)
                     .findFirst()
                     .orElse(null);
 
             if (selectedOvni != null) {
-                selectedOvni.setCustomPath(customPath); // Establecer la nueva trayectoria personalizada
-                System.out.println("Trayectoria personalizada establecida para OVNI: " + selectedOvni.toJson());
+                selectedOvni.setCustomPath(customPath);
             }
         }
     }
@@ -162,11 +135,13 @@ public class OVNIManager {
         for (OVNI ovni : ovnis) {
             if (ovni.getId() == ovniId) {
                 if (clientName == null) {
-                    ovni.setClientName(null); // Deseleccionar
+                    ovni.setClientName(null);
                 } else {
-                    ovni.setClientName(clientName); // Seleccionar
+                    ovni.setClientName(clientName);
                 }
+                System.out.println(ovni.toString());
                 break;
+            } else {
             }
         }
     }

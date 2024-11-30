@@ -1,11 +1,10 @@
 package co.edu.uptc.view;
 
 import javax.swing.*;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+
 import co.edu.uptc.model.ConnectionHandler;
-import lombok.Getter;
-import lombok.Setter;
+import co.edu.uptc.model.OVNI;
+import co.edu.uptc.presenter.Main;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -15,27 +14,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Getter
-@Setter
 public class OVNIPanel extends JPanel {
+    private Main main = new Main();
+    private ConnectionHandler connectionHandler;
     private List<OVNI> ovnis = new ArrayList<>();
     private List<Point> trajectory = new ArrayList<>(); // Trayectoria personalizada
-    private OVNI selectedOVNI; // OVNI seleccionado actualmente
-    private ConnectionHandler connectionHandler;
+    private OVNI selectedOVNI;
     private final Map<String, Color> clientColors = new HashMap<>();
     private final Color[] availableColors = { Color.BLUE, Color.MAGENTA, Color.CYAN, Color.ORANGE, Color.PINK };
     private int colorIndex = 0;
     private Point destination; // Para el destino del OVNI (si lo tienes)
 
-    public OVNIPanel(ConnectionHandler connectionHandler) {
-        this.connectionHandler = connectionHandler;
+    public OVNIPanel(ConnectionHandler model) {
+        this.connectionHandler = model;
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 selectOVNI(e.getX(), e.getY());
                 if (selectedOVNI != null) {
-                    // Iniciar la trayectoria personalizada
-                    trajectory.clear(); // Limpiar la trayectoria previa
+                    trajectory.clear();
                     trajectory.add(e.getPoint());
                 }
             }
@@ -52,7 +49,6 @@ public class OVNIPanel extends JPanel {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (selectedOVNI != null) {
-                    // Agregar puntos a la trayectoria mientras se mueve el mouse
                     trajectory.add(e.getPoint());
                     repaint();
                 }
@@ -112,21 +108,7 @@ public class OVNIPanel extends JPanel {
     private void sendTrajectoryToServer() {
         if (selectedOVNI != null && !trajectory.isEmpty()) {
             try {
-                JsonObject request = new JsonObject();
-                request.addProperty("action", "setCustomPath");
-                request.addProperty("ovniId", selectedOVNI.getId()); // Usamos el ID
-
-                // Convertir la trayectoria a JSON
-                JsonArray trajectoryJson = new JsonArray();
-                for (Point point : trajectory) {
-                    JsonObject pointJson = new JsonObject();
-                    pointJson.addProperty("x", point.x);
-                    pointJson.addProperty("y", point.y);
-                    trajectoryJson.add(pointJson);
-                }
-
-                request.add("trajectory", trajectoryJson);
-                connectionHandler.sendMessage(request.toString());
+                main.sendTrajectoryToServer(selectedOVNI, trajectory, connectionHandler);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -139,32 +121,22 @@ public class OVNIPanel extends JPanel {
 
         for (OVNI ovni : ovnis) {
             if (Math.abs(ovni.getX() - mouseX) <= 10 && Math.abs(ovni.getY() - mouseY) <= 10) {
-                selectedOVNI = ovni; // Seleccionamos el OVNI
+                selectedOVNI = ovni;
                 break;
             }
         }
 
-        if (selectedOVNI != null) {
-            try {
+        try {
+            if (selectedOVNI != null) {
                 if (previouslySelected != null && !selectedOVNI.equals(previouslySelected)) {
-                    JsonObject deselectRequest = new JsonObject();
-                    deselectRequest.addProperty("action", "selectOvni");
-                    deselectRequest.addProperty("ovniId", previouslySelected.getId()); // Usamos el ID
-                    deselectRequest.addProperty("deselect", true);
-                    connectionHandler.sendMessage(deselectRequest.toString());
+                    main.sendSelectRequest(previouslySelected, "deselect", this.connectionHandler);
                 }
-
-                JsonObject selectRequest = new JsonObject();
-                selectRequest.addProperty("action", "selectOvni");
-                selectRequest.addProperty("ovniId", selectedOVNI.getId()); // Usamos el ID
-                selectRequest.addProperty("deselect", false);
-                connectionHandler.sendMessage(selectRequest.toString());
-
-            } catch (IOException e) {
-                e.printStackTrace();
+                main.sendSelectRequest(selectedOVNI, "select", this.connectionHandler);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        repaint(); // Redibujar para mostrar el OVNI seleccionado
+        repaint();
     }
 
     private Color getColorForClient(String clientName) {

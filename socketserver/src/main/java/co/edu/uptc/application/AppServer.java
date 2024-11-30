@@ -11,11 +11,10 @@ public class AppServer implements Runnable {
     private final ServerSocket serverSocket;
     private final SimulationEngine simulationEngine;
 
-    public AppServer() throws IOException {
-        this.serverSocket = new ServerSocket(7000);
+    public AppServer(String port) throws IOException {
+        this.serverSocket = new ServerSocket(Integer.parseInt(port));
         this.simulationEngine = new SimulationEngine(800, 600, 400, 300, 50);
-        System.out.println("Servidor abierto en el puerto: 7000");
-        simulationEngine.startSimulation(10, 500, 5);
+        simulationEngine.startSimulation(20, 500, 10);
     }
 
     @Override
@@ -33,7 +32,7 @@ public class AppServer implements Runnable {
 
     public void shutDown() {
         try {
-            simulationEngine.stopSimulation(); // Detener simulación al cerrar el servidor.
+            simulationEngine.stopSimulation();
             serverSocket.close();
         } catch (IOException ignore) {
         }
@@ -41,7 +40,7 @@ public class AppServer implements Runnable {
 
     public static void main(String[] args) {
         try {
-            Thread serverThread = new Thread(new AppServer());
+            Thread serverThread = new Thread(new AppServer(args[0]));
             serverThread.start();
         } catch (IOException ignored) {
         }

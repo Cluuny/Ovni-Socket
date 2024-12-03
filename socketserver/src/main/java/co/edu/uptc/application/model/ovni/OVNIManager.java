@@ -1,6 +1,8 @@
 package co.edu.uptc.application.model.ovni;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 import lombok.Getter;
 
@@ -55,6 +57,7 @@ public class OVNIManager {
             }
             return false;
         });
+
         checkCollisions();
     }
 
@@ -63,12 +66,14 @@ public class OVNIManager {
         int deltaY = targetY - ovni.getY();
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+        double ratio = ovni.getSpeed() / distance;
+        int moveX = (int) (deltaX * ratio);
+        int moveY = (int) (deltaY * ratio);
+
         if (distance <= ovni.getSpeed()) {
             ovni.setX(targetX);
             ovni.setY(targetY);
         } else {
-            int moveX = (int) (ovni.getSpeed() * deltaX / distance);
-            int moveY = (int) (ovni.getSpeed() * deltaY / distance);
             ovni.setX(ovni.getX() + moveX);
             ovni.setY(ovni.getY() + moveY);
         }
@@ -104,6 +109,10 @@ public class OVNIManager {
             ovnisJson.add(ovni.toJson());
         }
         return ovnisJson;
+    }
+
+    public synchronized JsonElement intToJsonElement(int value) {
+        return new JsonPrimitive(value);
     }
 
     public void selectOvni(int ovniId, String clientName) {

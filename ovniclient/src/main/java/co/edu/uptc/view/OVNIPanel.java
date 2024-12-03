@@ -27,6 +27,9 @@ public class OVNIPanel extends JPanel {
     private final Color[] availableColors = { Color.BLUE, Color.MAGENTA, Color.CYAN, Color.ORANGE, Color.PINK };
     private int colorIndex = 0;
     private Point destination;
+    private int destX;
+    private int destY;
+    private int destRadius;
 
     public OVNIPanel(ConnectionHandler model) {
         this.connectionHandler = model;
@@ -62,6 +65,10 @@ public class OVNIPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        Color semiTransparentBlack = new Color(0, 0, 0, 128);
+        g.setColor(semiTransparentBlack);
+        g.fillOval(destX, destY, 2 * destRadius, 2 * destRadius);
 
         for (OVNI ovni : ovnis) {
             if (!ovni.isCrashed()) {
@@ -105,6 +112,12 @@ public class OVNIPanel extends JPanel {
                 g.drawLine(start.x, start.y, end.x, end.y);
             }
         }
+    }
+
+    public void updateDestination(int x, int y, int radius) {
+        this.destX = x - radius;
+        this.destY = y - radius;
+        this.destRadius = radius;
     }
 
     public void changeSpeed(OVNI selectedOvni, int speed) {

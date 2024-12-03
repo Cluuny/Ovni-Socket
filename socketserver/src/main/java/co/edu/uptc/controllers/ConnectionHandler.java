@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import co.edu.uptc.application.model.client.Client;
 import co.edu.uptc.application.model.client.RegularClient;
 import co.edu.uptc.application.model.ovni.OVNI;
 import co.edu.uptc.application.model.ovni.OVNIManager;
@@ -56,11 +55,11 @@ public class ConnectionHandler implements Runnable {
                         ServerLogger.log(clientName + ": registra", "info");
                         clientName = request.get("name").getAsString();
                         this.simulationEngine.getClientManager().addClient(new RegularClient(clientName));
-                        JsonObject dimensionResponse = new JsonObject();
-                        dimensionResponse.addProperty("width", 800);
-                        dimensionResponse.addProperty("height", 600);
-                        System.out.println(gson.toJson(dimensionResponse));
-                        writer.writeUTF(gson.toJson(dimensionResponse));
+                        JsonObject registerResponse = new JsonObject();
+                        registerResponse.addProperty("width", 800);
+                        registerResponse.addProperty("height", 600);
+                        System.out.println(gson.toJson(registerResponse));
+                        writer.writeUTF(gson.toJson(registerResponse));
                         break;
 
                     case "getStatus":
@@ -134,6 +133,10 @@ public class ConnectionHandler implements Runnable {
                     ovnisArray.add(ovni.toJson());
                 }
                 status.add("ovnis", ovnisArray);
+
+                status.add("destX", ovniManager.intToJsonElement(ovniManager.getDestinationX()));
+                status.add("destY", ovniManager.intToJsonElement(ovniManager.getDestinationY()));
+                status.add("destR", ovniManager.intToJsonElement(ovniManager.getDestinationRadius()));
 
                 synchronized (writer) {
                     String message = gson.toJson(status) + "\n";

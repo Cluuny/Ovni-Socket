@@ -3,6 +3,7 @@ package co.edu.uptc.application.model.ovni;
 import com.google.gson.JsonObject;
 
 import co.edu.uptc.application.model.client.ClientManager;
+import co.edu.uptc.controllers.ServerLogger;
 import lombok.Getter;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -59,6 +60,10 @@ public class SimulationEngine {
         status.addProperty("movingCount", ovniManager.getMovingCount());
         status.addProperty("crashedCount", ovniManager.getCrashedCount());
         status.add("ovnis", ovniManager.getAllOvnisAsJson());
+        status.add("destX", ovniManager.intToJsonElement(ovniManager.getDestinationX()));
+        status.add("destY", ovniManager.intToJsonElement(ovniManager.getDestinationY()));
+        status.add("destR", ovniManager.intToJsonElement(ovniManager.getDestinationRadius()));
+        ServerLogger.log(status, "info");
         return status;
     }
 }

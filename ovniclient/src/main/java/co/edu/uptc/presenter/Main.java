@@ -34,7 +34,6 @@ public class Main {
             model.connect(host, port);
             model.sendName(name);
 
-            // Mover cierre de ConnectionView aquí
             SwingUtilities.invokeLater(() -> {
                 if (simulationView == null) {
                     connectionView.dispose();

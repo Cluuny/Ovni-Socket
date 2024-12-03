@@ -79,6 +79,11 @@ public class SimulationView extends JFrame {
     }
 
     public void updateStats(JsonObject simulationData) {
+
+        int destinationX = simulationData.get("destX").getAsInt();
+        int destinationY = simulationData.get("destY").getAsInt();
+        int destinationRadius = simulationData.get("destR").getAsInt();
+
         int liveCount = simulationData.get("movingCount").getAsInt();
         int crashedCount = simulationData.get("crashedCount").getAsInt();
 
@@ -92,5 +97,6 @@ public class SimulationView extends JFrame {
 
         liveCountLabel.setText("OVNIs vivos: " + liveCount);
         crashedCountLabel.setText("OVNIs estrellados: " + crashedCount);
+        ovniPanel.updateDestination(destinationX, destinationY, destinationRadius);
     }
 }

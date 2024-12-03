@@ -21,7 +21,6 @@ public class ConnectionView extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Título
         JLabel titleLabel = new JLabel("Conexión Simulación OVNI", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridx = 0;
@@ -29,7 +28,6 @@ public class ConnectionView extends JFrame {
         gbc.gridwidth = 2;
         add(titleLabel, gbc);
 
-        // Host
         gbc.gridwidth = 1;
         gbc.gridy = 1;
         gbc.gridx = 0;
@@ -39,7 +37,6 @@ public class ConnectionView extends JFrame {
         hostField = new JTextField("localhost", 15);
         add(hostField, gbc);
 
-        // Puerto
         gbc.gridy = 2;
         gbc.gridx = 0;
         add(new JLabel("Puerto:"), gbc);
@@ -48,7 +45,6 @@ public class ConnectionView extends JFrame {
         portField = new JTextField("7000", 15);
         add(portField, gbc);
 
-        // Nombre
         gbc.gridy = 3;
         gbc.gridx = 0;
         add(new JLabel("Nombre:"), gbc);
@@ -57,7 +53,6 @@ public class ConnectionView extends JFrame {
         nameField = new JTextField("Cliente", 15);
         add(nameField, gbc);
 
-        // Botón Conectar
         gbc.gridy = 4;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
@@ -67,8 +62,8 @@ public class ConnectionView extends JFrame {
             try {
                 String host = hostField.getText();
                 int port = Integer.parseInt(portField.getText());
-                String name = nameField.getText().trim(); // Captura el nombre
-                listener.onConnectRequest(host, port, name); // Llama al método incluyendo el nombre
+                String name = nameField.getText().trim();
+                listener.onConnectRequest(host, port, name);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this,
                         "Puerto inválido",
@@ -77,9 +72,5 @@ public class ConnectionView extends JFrame {
             }
         });
         add(connectButton, gbc);
-    }
-
-    public interface ConnectionListener {
-        void onConnectRequest(String host, int port, String name);
     }
 }

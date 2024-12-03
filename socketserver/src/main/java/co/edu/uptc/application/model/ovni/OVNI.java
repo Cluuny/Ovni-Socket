@@ -1,9 +1,9 @@
-package co.edu.uptc.application.model;
+package co.edu.uptc.application.model.ovni;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger; // Para generar IDs únicos
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.JsonObject;
 
@@ -90,5 +90,22 @@ public class OVNI {
         json.addProperty("angle", this.angle);
         json.addProperty("clientName", this.clientName);
         return json;
+    }
+
+    @Override
+    public String toString() {
+        return "OVNI{" +
+                "id=" + id +
+                ", x=" + x +
+                ", y=" + y +
+                ", speed=" + speed +
+                ", crashed=" + crashed +
+                ", angle=" + angle +
+                ", hasDestination=" + hasDestination +
+                ", destinationX=" + destinationX +
+                ", destinationY=" + destinationY +
+                ", customPath=" + customPath +
+                ", clientName='" + clientName + '\'' +
+                '}';
     }
 }

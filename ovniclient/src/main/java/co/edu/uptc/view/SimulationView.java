@@ -6,9 +6,7 @@ import co.edu.uptc.model.ConnectionHandler;
 import co.edu.uptc.model.OVNI;
 
 import javax.swing.*;
-
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +15,8 @@ public class SimulationView extends JFrame {
     private List<OVNI> ovnis = new ArrayList<>();
     private JLabel liveCountLabel;
     private JLabel crashedCountLabel;
+    private JTextField speedTextField;
+    private JButton changeSpeedButton;
 
     public SimulationView(int width, int height, ConnectionHandler model, SimulationListener listener) {
         setTitle("Simulación OVNI");
@@ -36,7 +36,39 @@ public class SimulationView extends JFrame {
         statsPanel.add(liveCountLabel);
         statsPanel.add(crashedCountLabel);
 
-        add(statsPanel, BorderLayout.SOUTH);
+        add(statsPanel, BorderLayout.NORTH);
+
+        JPanel speedPanel = new JPanel();
+        speedPanel.setLayout(new FlowLayout());
+
+        speedTextField = new JTextField(10);
+        changeSpeedButton = new JButton("Cambiar velocidad");
+        changeSpeedButton.addActionListener(e -> {
+            try {
+                int newSpeed = Integer.parseInt(speedTextField.getText());
+                this.ovniPanel.changeSpeed(this.ovniPanel.getSelectedOVNI(), newSpeed);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Puerto inválido",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (NullPointerException npe) {
+                JOptionPane.showMessageDialog(this,
+                        "Ningún OVNI Seleccionado.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        Dimension preferredSize = new Dimension(150, 30);
+
+        speedTextField.setPreferredSize(preferredSize);
+        changeSpeedButton.setPreferredSize(preferredSize);
+
+        speedPanel.add(speedTextField);
+        speedPanel.add(changeSpeedButton);
+
+        add(speedPanel, BorderLayout.SOUTH);
 
         listener.onSimulationViewReady();
     }

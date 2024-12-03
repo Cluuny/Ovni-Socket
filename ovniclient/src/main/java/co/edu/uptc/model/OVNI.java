@@ -3,7 +3,7 @@ package co.edu.uptc.model;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger; // Para generar IDs únicos
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.JsonObject;
 
@@ -13,9 +13,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OVNI implements Cloneable {
-    private static final AtomicInteger idGenerator = new AtomicInteger(0); // Generador de IDs único
+    private static final AtomicInteger idGenerator = new AtomicInteger(0);
 
-    private int id; // ID único
+    private int id;
     private int x;
     private int y;
     private int speed;
@@ -28,7 +28,7 @@ public class OVNI implements Cloneable {
     private String clientName;
 
     public OVNI(int x, int y, int speed) {
-        this.id = idGenerator.incrementAndGet(); // Asignar un ID único
+        this.id = idGenerator.incrementAndGet();
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -92,9 +92,9 @@ public class OVNI implements Cloneable {
     @Override
     public OVNI clone() {
         try {
-            return (OVNI) super.clone(); // Clona el objeto OVNI
+            return (OVNI) super.clone();
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace(); // En caso de que la clonación no sea soportada
+            e.printStackTrace();
             return null;
         }
     }

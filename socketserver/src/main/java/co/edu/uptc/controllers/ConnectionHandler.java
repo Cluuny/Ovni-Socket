@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import co.edu.uptc.application.model.OVNI;
-import co.edu.uptc.application.model.OVNIManager;
-import co.edu.uptc.application.model.SimulationEngine;
+import co.edu.uptc.application.model.client.Client;
+import co.edu.uptc.application.model.client.RegularClient;
+import co.edu.uptc.application.model.ovni.OVNI;
+import co.edu.uptc.application.model.ovni.OVNIManager;
+import co.edu.uptc.application.model.ovni.SimulationEngine;
 
 import java.awt.Point;
 import java.io.DataInputStream;
@@ -50,9 +52,10 @@ public class ConnectionHandler implements Runnable {
                 JsonObject dimensions = new JsonObject();
 
                 switch (action) {
-                    case "registerName":
+                    case "registerRegularClient":
                         ServerLogger.log(clientName + ": registra", "info");
                         clientName = request.get("name").getAsString();
+                        this.simulationEngine.getClientManager().addClient(new RegularClient(clientName));
                         JsonObject dimensionResponse = new JsonObject();
                         dimensionResponse.addProperty("width", 800);
                         dimensionResponse.addProperty("height", 600);
@@ -76,14 +79,20 @@ public class ConnectionHandler implements Runnable {
                         break;
 
                     case "selectOvni":
-                        ServerLogger.log(clientName + ": selecciona", "info");
-                        int ovniIndex = request.get("ovniId").getAsInt();
+                        ServerLogger.log(clientName + ": " + request + ": selecciona", "info");
+                        int ovniIndexForSelect = request.get("ovniId").getAsInt();
                         boolean deselect = request.get("deselect").getAsBoolean();
                         if (deselect) {
-                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, null);
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndexForSelect, null);
                         } else {
-                            simulationEngine.getOvniManager().selectOvniById(ovniIndex, clientName);
+                            simulationEngine.getOvniManager().selectOvniById(ovniIndexForSelect, clientName);
                         }
+                        break;
+                    case "changeSpeed":
+                        System.out.println(request);
+                        int ovniIndexForSpeedChange = request.get("ovniId").getAsInt();
+                        int newSpeed = request.get("newSpeed").getAsInt();
+                        simulationEngine.getOvniManager().changeSpeed(ovniIndexForSpeedChange, newSpeed);
                         break;
                     case "setCustomPath":
                         ServerLogger.log(clientName + ": enruta", "info");

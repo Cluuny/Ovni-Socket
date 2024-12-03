@@ -1,4 +1,4 @@
-package co.edu.uptc.application.model;
+package co.edu.uptc.application.model.ovni;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

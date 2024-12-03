@@ -1,7 +1,8 @@
-package co.edu.uptc.application.model;
+package co.edu.uptc.application.model.ovni;
 
 import com.google.gson.JsonObject;
 
+import co.edu.uptc.application.model.client.ClientManager;
 import lombok.Getter;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -10,12 +11,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimulationEngine {
     private final CopyOnWriteArrayList<OVNI> ovnis;
     private final OVNIManager ovniManager;
+    private final ClientManager clientManager;
     private final int areaWidth;
     private final int areaHeight;
     private Thread simulationThread;
 
     public SimulationEngine(int areaWidth, int areaHeight, int destinationX, int destinationY, int destinationRadius) {
         this.ovnis = new CopyOnWriteArrayList<>();
+        this.clientManager = new ClientManager();
         this.areaWidth = areaWidth;
         this.areaHeight = areaHeight;
         this.ovniManager = new OVNIManager(ovnis, destinationX, destinationY, destinationRadius);

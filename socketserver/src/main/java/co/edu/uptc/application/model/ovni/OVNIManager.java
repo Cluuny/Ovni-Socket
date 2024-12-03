@@ -1,4 +1,4 @@
-package co.edu.uptc.application.model;
+package co.edu.uptc.application.model.ovni;
 
 import com.google.gson.JsonArray;
 
@@ -118,6 +118,15 @@ public class OVNIManager {
         }
     }
 
+    public void changeSpeed(int ovniId, int speed) {
+        for (OVNI ovni : ovnis) {
+            if (ovni.getId() == ovniId) {
+                ovni.setSpeed(speed);
+                break;
+            }
+        }
+    }
+
     public void setCustomPath(int ovniIndex, List<Point> customPath) {
         if (ovniIndex >= 0 && ovniIndex < ovnis.size()) {
             OVNI selectedOvni = ovnis.stream()
@@ -139,7 +148,6 @@ public class OVNIManager {
                 } else {
                     ovni.setClientName(clientName);
                 }
-                System.out.println(ovni.toString());
                 break;
             } else {
             }

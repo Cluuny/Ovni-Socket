@@ -23,7 +23,7 @@ public class ConnectionHandler implements Cloneable {
     public void sendName(String name) throws IOException {
         this.clientName = name;
         JsonObject request = new JsonObject();
-        request.addProperty("action", "registerName");
+        request.addProperty("action", "registerRegularClient");
         request.addProperty("name", name);
         sendMessage(request.toString());
     }
@@ -68,16 +68,7 @@ public class ConnectionHandler implements Cloneable {
 
     @Override
     public ConnectionHandler clone() throws CloneNotSupportedException {
-        // Se hace la clonación superficial llamando al método de la clase Object
         ConnectionHandler cloned = (ConnectionHandler) super.clone();
-
-        // No es necesario clonar los objetos como clientSocket, reader y writer
-        // porque son referencias que se comparten entre el original y el clon
-
-        // También puedes reinicializar o limpiar ciertos campos si es necesario
-        // Por ejemplo, no clonar el nombre del cliente si no quieres que se comparta
-        // cloned.clientName = null; // Si quieres que el clon no tenga el mismo nombre
-
         return cloned;
     }
 }

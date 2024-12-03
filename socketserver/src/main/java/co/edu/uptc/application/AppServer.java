@@ -1,6 +1,6 @@
 package co.edu.uptc.application;
 
-import co.edu.uptc.application.model.SimulationEngine;
+import co.edu.uptc.application.model.ovni.SimulationEngine;
 import co.edu.uptc.controllers.ConnectionHandler;
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ public class AppServer implements Runnable {
     public AppServer(String port) throws IOException {
         this.serverSocket = new ServerSocket(Integer.parseInt(port));
         this.simulationEngine = new SimulationEngine(800, 600, 400, 300, 50);
-        simulationEngine.startSimulation(20, 500, 10);
+        simulationEngine.startSimulation(20, 500, 5);
     }
 
     @Override

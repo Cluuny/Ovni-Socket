@@ -136,12 +136,10 @@ public class Main {
                     ovniJson.get("y").getAsInt(),
                     ovniJson.get("speed").getAsInt());
 
-            // Asignar los valores restantes manualmente
             ovni.setAngle(ovniJson.get("angle").getAsInt());
             ovni.setCrashed(ovniJson.get("crashed").getAsBoolean());
-            ovni.setId(ovniJson.get("id").getAsInt()); // Establecer el ID que viene del servidor
+            ovni.setId(ovniJson.get("id").getAsInt());
 
-            // Verificar si el "clientName" existe antes de asignarlo
             if (ovniJson.has("clientName") && !ovniJson.get("clientName").isJsonNull()) {
                 ovni.setClientName(ovniJson.get("clientName").getAsString());
             } else {
@@ -153,9 +151,16 @@ public class Main {
         return ovnis;
     }
 
+    public void sendSpeedChange(OVNI selectedOVNI, int speed, ConnectionHandler modelFromClient) throws IOException {
+        JsonObject changeSpeedRequest = new JsonObject();
+        changeSpeedRequest.addProperty("action", "changeSpeed");
+        changeSpeedRequest.addProperty("ovniId", selectedOVNI.getId());
+        changeSpeedRequest.addProperty("newSpeed", speed);
+        modelFromClient.sendMessage(changeSpeedRequest.toString());
+    }
+
     public boolean sendSelectRequest(OVNI ovni, String action, ConnectionHandler modelFromClient) throws IOException {
         boolean wasSended = false;
-        System.out.println(modelFromClient.getReader().toString());
         if (action.equals("deselect")) {
             JsonObject deselectRequest = new JsonObject();
             deselectRequest.addProperty("action", "selectOvni");
